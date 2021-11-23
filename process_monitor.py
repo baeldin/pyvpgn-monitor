@@ -26,7 +26,7 @@ def get_process_details(p):
     pid = p.pid
     logging.debug("{:s} has PID {:d} and has been running for {:d} seconds".format(
         p.name(), pid, int(running.total_seconds())))
-    return True
+    return pid
 
 
 def check_processes():
@@ -34,7 +34,7 @@ def check_processes():
     running_dict = {"D2GS": False}
     for p in psutil.process_iter():
         for process in running_dict.keys():
-            if process in p.name():
+            if process in p.name() and not "SVC" in p.name():
                 running_dict[process] = get_process_details(p)
     return running_dict
 
