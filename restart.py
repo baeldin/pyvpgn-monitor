@@ -1,37 +1,35 @@
-import telnetlib
-import time
 import argparse
-import process_monitor
-import psutil
-
-host = 'localhost'
-port = 8888
-timeout = 100
+import d2gs
+import time
 
 
-parser = argparse.ArgumentParser(description='Restart D2GS in N seconds')
-parser.add_argument('-N', '--delay', type=int, default=900)
-args = parser.parse_args()
+def parsing_arguments():
+    parser = argparse.ArgumentParser(description='Restart D2GS in N seconds')
+    parser.add_argument('-N', '--delay', type=int, default=902)
+    args = parser.parse_args()
+    return args
 
 
-def kill_process(delay):
-    time.sleep(delay)
-    process_dict = process_monitor.check_processes()
-    d2gs_id = process_dict['D2GS']
-    print(process_dict)
-    p = psutil.Process(d2gs_id)
-    print(p)
-    p.terminate()
+def wait_before_restart(gs, wait_time):
+    """ If the delay is more than 2 minutes, warn players using
+    messages via telnet, so they can still create and join games
+    up until 120 seconds before the restart """
+    wait_time_minutes = int(float(wait_time)/60.)
+    wait_time_residual = wait_time - wait_time_minutes*60
+    wait_time_rounded = 60*wait_time_minutes
+    time.sleep(wait_time - wait_time_rounded)
+    while wait_time_rounded > 120:
+        gs.msg("This server will be restarted in {:d} minutes.".format(int(wait_time_rounded/60)))
+        wait_time_rounded -= 60
+        time.sleep(60)
 
 
+def main():
+    args = parsing_arguments()
+    gs = d2gs.D2GS('localhost', 8888)
+    wait_before_restart(gs, args.delay)
+    gs.restart(kill=True, delay=122)
 
-with telnetlib.Telnet(host, port, timeout) as session:
-    time.sleep(2)
-    session.write(b"Tsuru110ESR\n")
-    time.sleep(2)
-    delay = args.delay+2
-    restart_command = "restart "+str(delay)+"\n"
-    restart_command_bytes = bytes(restart_command, 'utf-8')
-    session.write(restart_command_bytes)
-    session.write(b"exit")
-    kill_process(delay)
+
+if __name__ == "__main__":
+    main()
