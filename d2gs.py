@@ -6,9 +6,18 @@ import psutil
 import pandas as pd
 
 
-game_cut = [5, 17, 17, 6, 9, 6, 12, 11, 6, 10, 3]
-columns = ['No.', 'GameName', 'GamePass', 'ID', 'GameVer', 'Type', 'Difficulty', 'Ladder', 'Users', 'CreateTime', 'Dis']
-dtypes = [int, str, str, int, str, str, str, str, int, str, str]
+cut = {
+        'games': [5, 17, 17, 6, 9, 6, 12, 11, 6, 10, 3],
+        'chars': [5, 17, 17, 17, 7, 7, 10]
+}
+columns = {
+        'games': ['No.', 'GameName', 'GamePass', 'ID', 'GameVer', 'Type', 'Difficulty', 'Ladder', 'Users', 'CreateTime', 'Dis'],
+        'chars': ['No.', 'AcctName', 'CharName', 'IPAddress', 'Class', 'Level', 'EnterTime']
+}
+dtypes = {
+        'games': [int, str, str, int, str, str, str, str, int, str, str],
+        'chars': [int, str, str, str, str, int, str]
+}
 
 
 class D2GS():
@@ -25,6 +34,7 @@ class D2GS():
         self.port = port
         self.passwd = b"Tsuru110ESR\n"
         self.timeout = 100
+        self.session = self.telnet()
 
 
     def telnet(self):
@@ -36,13 +46,14 @@ class D2GS():
         return session
 
 
-    def telnet_command(self, session, cmd):
-        cmd+="\n"
+    def telnet_command(self, cmd):
+        if not cmd[-1] == "\n":
+            cmd+="\n"
         cmd_bytes = bytes(cmd, 'utf-8')
-        session.read_very_eager()
-        session.write(cmd_bytes)
+        self.session.read_very_eager()
+        self.session.write(cmd_bytes)
         time.sleep(0.5)
-        return session.read_very_eager()
+        return self.session.read_very_eager().decode().split("\r\n")
 
 
     def restart(self, kill=True, delay=902):
@@ -58,11 +69,11 @@ class D2GS():
 
         Using telnet first, then killing the process assures that the players get a
         countdown warning and all memory is cleaned up."""
-        session = self.telnet()
         restart_command = "restart "+str(delay)+"\n"
         restart_command_bytes = bytes(restart_command, 'utf-8')
-        session.write(restart_command_bytes)
-        session.write(b"exit")
+        self.session.write(restart_command_bytes)
+        time.sleep(0.5)
+        self.session.write(b"exit")
         if kill:
             self.kill(delay)
 
@@ -77,11 +88,10 @@ class D2GS():
 
 
     def msg(self, msg):
-        with self.telnet() as session:
-            msg_command = "msg sys #all \""+msg+"\"\n"
-            msg_command_bytes = bytes(msg_command, 'utf-8')
-            session.write(msg_command_bytes)
-            session.write(b"exit")
+        msg_command = "msg sys #all \""+msg+"\"\n"
+        msg_command_bytes = bytes(msg_command, 'utf-8')
+        self.session.write(msg_command_bytes)
+        self.session.write(b"exit")
 
 
     def status(self):
@@ -107,60 +117,96 @@ class D2GS():
             
     def status_raw(self):
         """ open telnet session and send the 'status' command, then return its result as string."""
-        with self.telnet() as session:
-            # session.read_very_eager()
-            session.read_until(b"Password:")
-            session.write(b"status\n")
-            time.sleep(1)
-            session.write(b"exit\n")
-            time.sleep(1)
-            #session.read_until(b"D2GS> status")
-            status_str = session.read_very_eager().decode('ascii')
+        # session.read_very_eager()
+        self.session.read_until(b"Password:")
+        self.session.write(b"status\n")
+        time.sleep(1)
+        self.session.write(b"exit\n")
+        time.sleep(1)
+        #session.read_until(b"D2GS> status")
+        status_str = self.session.read_very_eager().decode('ascii')
         return status_str
     
 
     def games(self):
-        def multi_space_to_one(s):
-            m = 0
-            n = 1
-            while n - m > 0:
-                n = len(s)
-                s = s.replace("  ", " ")
-                m = len(s)
-            return s
-        
-        
-        def cut_trailing_spaces(s):
-            while True:
-                if s[-1] == " ":
-                    s = s[0:-1]
-                else:
-                    return s
-        
-        
-        def chunkstring(string, lengths):
-            return (string[pos:pos+length].strip()
-                    for idx,length in enumerate(lengths)
-                    for pos in [sum(map(int, lengths[:idx]))])
-
-
-        session = self.telnet()
         time.sleep(2)
-        gl_raw = self.telnet_command(session, "gl\n")
-        gl_list = gl_raw.decode().split("\r\n")
+        gl = self.telnet_command("gl\n")
+        games, columns = self.split_return(gl, 'games')
+        return pd.DataFrame(games, columns = columns)
+
+
+    def chars_in_game(self, game_id):
+        time.sleep(2)
+        cl = self.telnet_command("cl "+str(game_id)+"\n")
+        chars, columns = self.split_return(cl, 'chars')
+        return pd.DataFrame(chars, columns = columns)
+
+    def we(self):
+#         [['we'],
+#  ['     World Event', 'Enable'],
+#  ['        Key Item', "Devil's Food"],
+#  ['     Total Spawn', '21'],
+#  ['      Base Count', '17'],
+#  ['Last Spawn Count', '87'],
+#  ['   Current Count', '87'],
+#  ['Next Spawn Count', '104'],
+#  ['  Last Sell Time', '2021-12-10 15:32:56'],
+#  [' Last Spawn Time', '2021-12-10 15:32:56'],
+#  [''],
+#  ['D2GS> ']]
+        we_list = self.telnet_command("we")
+        we_out = {}
+        for we_entry_ in we_list:
+            we_entry = we_entry_.split(" : ")
+            if type(we_entry) == list and len(we_entry) == 2:
+                print(we_entry)
+                if not 'Time' in we_entry[0]:
+                    we_out[we_entry[0].replace(" ","")] = we_entry[1]
+                else:
+                    we_out[we_entry[0].replace(" ","")] = dt.datetime.strptime(we_entry[1], "%Y-%m-%d %H:%M:%S")
+        return we_out
+
+
+    def split_return(self, in_list, mode):
+        line_identifiers = {'games': "GameName", 'chars': "AcctName"}
         keep = False
-        games = []
-        for gl_line in gl_list:
+        list_entries = []
+        for in_line in in_list:
             if keep:
-                if "-----" in gl_line:
+                if "-----" in in_line:
                     keep = False
                     continue
-                game_ = list(chunkstring(gl_line[2:-4], game_cut))
-                game = []
-                for g, dtype in zip(game_, dtypes):
-                    game.append(dtype(g))
-                games.append(game)
-            if "GameName" in gl_line:
-                columns = multi_space_to_one(gl_line[2:-2].replace("-"," ")).split(" ")
+                list_entry_ = list(chunkstring(in_line[2:-4], cut[mode]))
+                list_entry = []
+                for g, dtype in zip(list_entry_, dtypes[mode]):
+                    list_entry.append(dtype(g))
+                list_entries.append(list_entry)
+            if line_identifiers[mode] in in_line:
+                columns = multi_space_to_one(in_line[2:-2].replace("-"," ")).split(" ")
                 keep = True
-        return pd.DataFrame(games, columns = columns)
+        return list_entries, columns
+
+def multi_space_to_one(s):
+    m = 0
+    n = 1
+    while n - m > 0:
+        n = len(s)
+        s = s.replace("  ", " ")
+        m = len(s)
+    return s
+
+
+def cut_trailing_spaces(s):
+    while True:
+        if s[-1] == " ":
+            s = s[0:-1]
+        else:
+            return s
+
+
+def chunkstring(string, lengths):
+    return (string[pos:pos+length].strip()
+            for idx,length in enumerate(lengths)
+            for pos in [sum(map(int, lengths[:idx]))])
+
+

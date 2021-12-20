@@ -2,6 +2,7 @@ import os
 import logging
 import subprocess
 import psutil
+import datetime as dt
 
 
 logging.basicConfig(filename='/home/d2esr/char_backup/backup.log', encoding='utf-8', level=logging.DEBUG)
@@ -10,13 +11,15 @@ dir_dict = {
     'bnetd': '/home/d2esr/pvpgn/sbin',
     'd2cs': '/home/d2esr/pvpgn/sbin',
     'd2dbs': '/home/d2esr/pvpgn/sbin',
-    'D2GS': '/home/d2esr/d2gs'
+    # 'D2GS': '/home/d2esr/d2gs',
+    'D2GSSVC': '/home/d2esr/d2gs'
     }
 bin_dict = {
     'bnetd': '/home/d2esr/pvpgn/sbin/bnetd',
     'd2cs': '/home/d2esr/pvpgn/sbin/d2cs',
     'd2dbs': '/home/d2esr/pvpgn/sbin/d2dbs',
-    'D2GS': 'wine ./D2GS.exe'
+    # 'D2GS': 'wine ./D2GS.exe',
+    'D2GSSVC': 'wine net start D2GS'
     }
 
 
@@ -34,13 +37,13 @@ def get_PIDs(process_name=None):
     if process_name:
         processes = [process_name]
     else:
-        processes = ['bnetd', 'd2cs', 'd2dbs', 'D2GS']
+        processes = ['bnetd', 'd2cs', 'd2dbs', 'D2GSSVC']
     pids = {}
     for process_name in processes:
         running = False
         for proc in psutil.process_iter():
             if process_name.lower() in proc.name().lower():
-                print("found "+process_name+" found with pid "+str(proc.pid))
+                #print("found "+process_name+" found with pid "+str(proc.pid))
                 pids[process_name] = proc.pid
                 running = True
         if not running:
@@ -65,6 +68,7 @@ def restart_proc(pids):
             logging.info("launching "+proc)
             shell = True if proc == 'D2GS' else False
             print("Restarting "+proc)
+            # D2GS is handled by the service!
             stuff = subprocess.Popen(bin_dict[proc], cwd=dir_dict[proc], shell=shell)
 
 
@@ -87,7 +91,7 @@ def main():
     pids, missing_pid = get_PIDs()
     if missing_pid:
         restart_proc(pids)
-    print(pids)
+    print(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S ")+repr(pids))
     write_pids(pids)
 
 
