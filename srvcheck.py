@@ -66,9 +66,10 @@ def restart_proc(pids):
         if not pid:
             rerun_pids = True
             logging.info("launching "+proc)
-            shell = True if proc == 'D2GS' else False
+            shell = True if proc == 'D2GSSVC' else False
             print("Restarting "+proc)
             # D2GS is handled by the service!
+            logging.debug(bin_dict[proc])
             stuff = subprocess.Popen(bin_dict[proc], cwd=dir_dict[proc], shell=shell)
 
 
