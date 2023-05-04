@@ -70,34 +70,14 @@ class D2GS():
         return self.session.read_very_eager().decode().split("\r\n")
 
 
-    def restart(self, kill=True, delay=902):
+    def restart(self, delay=0):
         """ open telnet and initiate a restart
         Parameters:
-        bool kill ........ Kill process after restarting server?
         int delay ........ delay in seconds
 
-        Initiate a restart of the game server. The kill parameter determines whether
-        the actual process will be killed after the delay has run out. This is used
-        to force restart the process and prevent memory iusses, ideal for scheduled
-        restarts of the game server. The server is restarted after [delay] seconds.
-
-        Using telnet first, then killing the process assures that the players get a
-        countdown warning and all memory is cleaned up."""
-        restart_command = "restart "+str(delay)+"\n"
-        restart_command_bytes = bytes(restart_command, 'utf-8')
-        self.session.write(restart_command_bytes)
-        self.session.write(b"exit")
+        Restart the docker container after a delay"""
         time.sleep(delay)
         os.system("docker container restart {:s}".format(self.dockerID))
-
-
-    def kill(self, delay):
-        """ Kill the process of D2GS after [delay] seconds."""
-        time.sleep(delay)
-        process_dict = process_monitor.check_processes()
-        d2gs_id = process_dict['D2GS']
-        p = psutil.Process(d2gs_id)
-        p.terminate()
 
 
     def msg(self, msg):

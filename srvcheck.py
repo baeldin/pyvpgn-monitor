@@ -4,8 +4,6 @@ import subprocess
 import psutil
 import datetime as dt
 
-user = 'firesnake'
-
 logging.basicConfig(
         filename='srv.log', 
         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -15,7 +13,6 @@ logging.basicConfig(
 
 # process names and full paths
 dir_dict = {
-<<<<<<< HEAD
     'bnetd': '/home/d2esr/pvpgn/sbin',
     'd2cs': '/home/d2esr/pvpgn/sbin',
     'd2dbs': '/home/d2esr/pvpgn/sbin'
@@ -27,19 +24,6 @@ bin_dict = {
     'd2cs': '/home/d2esr/pvpgn/sbin/d2cs',
     'd2dbs': '/home/d2esr/pvpgn/sbin/d2dbs'
     # 'D2GS': 'wine ./D2GS.exe',
-=======
-    'bnetd': '/home/' + user + '/pvpgn/sbin',
-    'd2cs': '/home/' + user + '/pvpgn/sbin',
-    'd2dbs': '/home/' + user + '/pvpgn/sbin',
-    'D2GS': '/home/' + user + '/d2gs'
-    # 'D2GSSVC': '/home/' + user + '/d2gs'
-    }
-bin_dict = {
-    'bnetd': '/home/' + user + '/pvpgn/sbin/bnetd',
-    'd2cs': '/home/' + user + '/pvpgn/sbin/d2cs',
-    'd2dbs': '/home/' + user + '/pvpgn/sbin/d2dbs',
-    'D2GS': '/usr/local/bin/wine /home/' + user + '/d2gs/D2GS.exe',
->>>>>>> c735d0c7c0e92a5d0d5c21e4ddf2d92418c589d7
     #'D2GSSVC': 'wine net start D2GS'
     }
 
@@ -120,9 +104,5 @@ def main():
     # print(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S ")+repr(pids))
     write_pids(pids)
 
-
-
-
 if __name__ == "__main__":
     main()
-
