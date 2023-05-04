@@ -4,8 +4,10 @@ import datetime as dt
 import process_monitor
 import psutil
 import pandas as pd
+import os
 
 
+# positions of values in returns from d2gs when checking games and chars via telnet
 cut = {
         'games': [5, 17, 17, 6, 9, 6, 12, 11, 6, 10, 3],
         'chars': [5, 17, 17, 17, 7, 7, 10]
@@ -19,6 +21,10 @@ dtypes = {
         'chars': [int, str, str, str, str, int, str]
 }
 
+with open("passwd") as f:
+    telnet_passwd = bytes(f.read(), "utf-8")
+
+run_command = "docker run -it -v /home/d2esr/d2gs:/D2GS/drive_c/Diablo2 --ip 172.17.0.2 -p 4000:4000 thomasesr/d2gs:latest &"
 
 class D2GS():
     """ D2GS Class
@@ -32,15 +38,23 @@ class D2GS():
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.passwd = b"Tsuru110ESR\n"
+        self.passwd = telnet_passwd
         self.timeout = 100
+        self.dockerID = self.get_container_ID()
         self.session = self.telnet()
 
+
+    def get_container_ID(self):
+        os.system('docker container ls | tail -n 1 | cut -f 1 -d " " > d2gs_docker_container_ID')
+        with open("d2gs_docker_container_ID") as f:
+            dockerID = f.read()
+        return dockerID
+        
 
     def telnet(self):
         """ open and return telnet session """
         session = telnetlib.Telnet(self.host, self.port, self.timeout)
-        time.sleep(2)
+        time.sleep(5)
         session.write(self.passwd)
         time.sleep(2)
         return session
@@ -72,10 +86,9 @@ class D2GS():
         restart_command = "restart "+str(delay)+"\n"
         restart_command_bytes = bytes(restart_command, 'utf-8')
         self.session.write(restart_command_bytes)
-        time.sleep(0.5)
         self.session.write(b"exit")
-        if kill:
-            self.kill(delay)
+        time.sleep(delay)
+        os.system("docker container restart {:s}".format(self.dockerID))
 
 
     def kill(self, delay):
@@ -142,18 +155,18 @@ class D2GS():
         return pd.DataFrame(chars, columns = columns)
 
     def we(self):
-#         [['we'],
-#  ['     World Event', 'Enable'],
-#  ['        Key Item', "Devil's Food"],
-#  ['     Total Spawn', '21'],
-#  ['      Base Count', '17'],
-#  ['Last Spawn Count', '87'],
-#  ['   Current Count', '87'],
-#  ['Next Spawn Count', '104'],
-#  ['  Last Sell Time', '2021-12-10 15:32:56'],
-#  [' Last Spawn Time', '2021-12-10 15:32:56'],
-#  [''],
-#  ['D2GS> ']]
+        #         [['we'],
+        #  ['     World Event', 'Enable'],
+        #  ['        Key Item', "Devil's Food"],
+        #  ['     Total Spawn', '21'],
+        #  ['      Base Count', '17'],
+        #  ['Last Spawn Count', '87'],
+        #  ['   Current Count', '87'],
+        #  ['Next Spawn Count', '104'],
+        #  ['  Last Sell Time', '2021-12-10 15:32:56'],
+        #  [' Last Spawn Time', '2021-12-10 15:32:56'],
+        #  [''],
+        #  ['D2GS> ']]
         we_list = self.telnet_command("we")
         we_out = {}
         for we_entry_ in we_list:
@@ -187,6 +200,9 @@ class D2GS():
         return list_entries, columns
 
 def multi_space_to_one(s):
+    """
+    replace multiple spaces in string with single string
+    """
     m = 0
     n = 1
     while n - m > 0:
@@ -197,6 +213,9 @@ def multi_space_to_one(s):
 
 
 def cut_trailing_spaces(s):
+    """
+    cut trailing spaces from end of string
+    """
     while True:
         if s[-1] == " ":
             s = s[0:-1]

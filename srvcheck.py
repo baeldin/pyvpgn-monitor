@@ -10,16 +10,16 @@ logging.basicConfig(filename='/home/d2esr/char_backup/backup.log', encoding='utf
 dir_dict = {
     'bnetd': '/home/d2esr/pvpgn/sbin',
     'd2cs': '/home/d2esr/pvpgn/sbin',
-    'd2dbs': '/home/d2esr/pvpgn/sbin',
+    'd2dbs': '/home/d2esr/pvpgn/sbin'
     # 'D2GS': '/home/d2esr/d2gs',
-    'D2GSSVC': '/home/d2esr/d2gs'
+    #'D2GSSVC': '/home/d2esr/d2gs'
     }
 bin_dict = {
     'bnetd': '/home/d2esr/pvpgn/sbin/bnetd',
     'd2cs': '/home/d2esr/pvpgn/sbin/d2cs',
-    'd2dbs': '/home/d2esr/pvpgn/sbin/d2dbs',
+    'd2dbs': '/home/d2esr/pvpgn/sbin/d2dbs'
     # 'D2GS': 'wine ./D2GS.exe',
-    'D2GSSVC': 'wine net start D2GS'
+    #'D2GSSVC': 'wine net start D2GS'
     }
 
 
