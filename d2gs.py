@@ -24,7 +24,7 @@ dtypes = {
 with open("passwd") as f:
     telnet_passwd = bytes(f.read(), "utf-8")
 
-run_command = "docker run -it -v /home/d2esr/d2gs:/D2GS/drive_c/Diablo2 --ip 172.17.0.2 -p 4000:4000 thomasesr/d2gs:latest &"
+# run_command = "docker run -it -v /home/d2esr/d2gs:/D2GS/drive_c/Diablo2 --ip 172.17.0.2 -p 4000:4000 thomasesr/d2gs:latest &"
 
 class D2GS():
     """ D2GS Class
@@ -45,7 +45,7 @@ class D2GS():
 
 
     def get_container_ID(self):
-        os.system('docker container ls | tail -n 1 | cut -f 1 -d " " > d2gs_docker_container_ID')
+        os.system('docker container ls -a | tail -n 1 | cut -f 1 -d " " > d2gs_docker_container_ID')
         with open("d2gs_docker_container_ID") as f:
             dockerID = f.read()
         return dockerID

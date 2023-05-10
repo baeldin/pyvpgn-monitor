@@ -45,7 +45,7 @@ def main():
     gs = d2gs.D2GS('172.17.0.2', 8888)
     print("Starting restart wait now")
     wait_before_restart(gs, args.delay)
-    gs.restart(kill=True, delay=2)
+    gs.restart(delay=2)
 
 
 if __name__ == "__main__":
